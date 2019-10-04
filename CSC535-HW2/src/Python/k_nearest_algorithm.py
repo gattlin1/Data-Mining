@@ -1,70 +1,108 @@
-#!/usr/bin/python3
+"""
+    author: Gattlin Walker
+    email: gattlin1@live.missouristate.edu
+    trace: gat1
 
-def knn_improved(data, k_neighbors, input):
-    data_info = []
-    neighbors = []
-    for entry in data:
-        s = {'classification': entry[0], 'distance': dist(input, entry)}
-        data_info.append(s)
+    An implementation of the K Nearest Neighbors Algorithm
+    The data files are in a specific format with the first row being column names
+    and the first entry in subsequent rows being the expected classification.
+"""
 
-    data_info = sorted(data_info, key = lambda i: i['distance'])
-
-    for entry in data_info[:k_neighbors]:
-        neighbors.append(entry['classification'])
-
-    return mode(neighbors)
-
-# this function was left here just to show the base algorithm
+"""
+    a classification algorithm that finds the k nearest entries to the input
+    @param data: the dataset used to classify the input
+    @param k_neighbors: an int of the closest neighbors to consider as possible classes
+    @param input: the entry to be classified
+    @return: the calculated classification
+"""
 def knn(data, k_neighbors, input):
-    neighbors = []
-    classifiers = []
+    data_info, neighbors = [], []
 
     for entry in data:
-        if len(neighbors) < k_neighbors:
-            neighbors.append(entry)
-        else:
-            new_dist = dist(input, entry)
+        entry_data = {'class': entry[0], 'distance': dist(input[1:], entry[1:])}
+        data_info.append(entry_data)
 
-            for neighbor in neighbors:
-                if new_dist < dist(input, neighbor):
-                    neighbors.remove(neighbor)
-                    neighbors.append(entry)
+    data_info.sort(key = lambda i: i['distance'])
 
-    for neighbor in neighbors:
-        classifiers.append(neighbor[0])
+    neighbors = data_info[: k_neighbors]
+    closest_match = closest(neighbors)
 
-    return mode(classifiers)
+    return closest_match
 
 
+"""
+    euclidean distance method to get the distance between two entries
+    @param base: the entry we are trying to find the classification for
+    @param entry: the entry we are comparing to the base
+    @return: returns the distance of the two params
+"""
 def dist(base, entry):
     dist = 0
 
     for i in range(len(base)):
-        dist = (int(base[i]) + int(entry[i])) ** 2
+        dist += (int(base[i]) - int(entry[i])) ** 2
 
     return dist ** 0.5
 
-def mode(entries):
+
+"""
+    takes an array of dictionaries and adds their class value
+    to a dictionary where the value is the inverse of their distance
+    from the input. The highest value is then chosen as the closest input.
+    @param entries: the k nearest entries to the input
+    @return: the closest entry to the input
+"""
+def closest(entries):
     classifiers = {}
 
     for entry in entries:
-        if entry in classifiers:
-            classifiers[entry] += 1
+        classification = entry['class']
+        dist = 1 / int(entry['distance'])
+
+        if classification in classifiers:
+            classifiers[classification] += dist
         else:
-            classifiers[entry] = 1
+            classifiers[classification] = dist
 
     return max(classifiers, key = classifiers.get)
 
+
+"""
+    takes a file path to a dataset in csv form and converts it into a dataset
+    @param file_path: file path to the dataset to be made
+    @return: a list of lists to form the finished dataset
+"""
+def make_dataset(file_path):
+    dataset = []
+    with open(file_path, 'r') as file:
+        dataset = [line.strip('\n').split(',') for line in file.readlines()]
+    dataset.pop(0) # removing the first entry of column names
+
+    return dataset
+
+
 if __name__ == "__main__":
-    filename = '/Users/gattlinwalker/Documents/school_work/MSU/csc/csc535/Data-Mining/CSC535-HW2/test/MNIST_train.csv'
-    data = []
+    training_path = '../../test/MNIST_train.csv'
+    testing_path = '../../test/MNIST_test.csv'
+    training_set = make_dataset(training_path)
+    testing_set = make_dataset(testing_path)
+    correct_class = 0
+    num_neighbors = 5
 
-    with open(filename, 'r') as file:
-        data = [line.strip('\n').split(',') for line in file.readlines()]
-        data.pop(0) # removing the first entry of column names
+    print('K = ', num_neighbors)
+    average_time = []
+    for i in range(5):
+        for entry in testing_set:
+            actual = knn(training_set, num_neighbors, entry)
+            expected = entry[0]
 
-    # This is for the base implementation
-    # results = knn(data, 5, data[300])
+            if expected == actual:
+                correct_class += 1
 
-    results = knn_improved(data, 5, data[300])
-    print(results)
+            print('Desired Class: ', expected, ' Computed Class: ', actual)
+
+        percentage_correct = 100 * correct_class / len(testing_set)
+
+        print('Accuracy Rate: ', percentage_correct, '%')
+        print('Number of misclassified test samples: ', len(testing_set) - correct_class)
+        print('Total number of test samples: ', len(testing_set))
