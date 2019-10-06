@@ -57,7 +57,7 @@ def closest(entries):
 
     for entry in entries:
         classification = entry['class']
-        dist = 1 / int(entry['distance'])
+        dist = 1 / int(entry['distance']) if int(entry['distance']) > 0 else 0
 
         if classification in classifiers:
             classifiers[classification] += dist
@@ -86,23 +86,21 @@ if __name__ == "__main__":
     testing_path = '../../test/MNIST_test.csv'
     training_set = make_dataset(training_path)
     testing_set = make_dataset(testing_path)
+    num_neighbors = 7
     correct_class = 0
-    num_neighbors = 5
 
     print('K = ', num_neighbors)
-    average_time = []
-    for i in range(5):
-        for entry in testing_set:
-            actual = knn(training_set, num_neighbors, entry)
-            expected = entry[0]
+    for entry in testing_set:
+        actual = knn(training_set, num_neighbors, entry)
+        expected = entry[0]
 
-            if expected == actual:
-                correct_class += 1
+        if expected == actual:
+            correct_class += 1
 
-            print('Desired Class: ', expected, ' Computed Class: ', actual)
+        print('Desired Class: ', expected, ' Computed Class: ', actual)
 
-        percentage_correct = 100 * correct_class / len(testing_set)
+    percentage_correct = 100 * correct_class / len(testing_set)
 
-        print('Accuracy Rate: ', percentage_correct, '%')
-        print('Number of misclassified test samples: ', len(testing_set) - correct_class)
-        print('Total number of test samples: ', len(testing_set))
+    print('Accuracy Rate: ', percentage_correct, '%')
+    print('Number of misclassified test samples: ', len(testing_set) - correct_class)
+    print('Total number of test samples: ', len(testing_set))
